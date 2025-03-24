@@ -2,14 +2,18 @@ from transformers import pipeline
 from datetime import datetime
 import os
 
+# Load GPT-2 medium model
 chat = pipeline("text-generation", model="gpt2-medium")
 
+# Create logs directory if it doesn't exist
 if not os.path.exists("kairo_logs"):
     os.mkdir("kairo_logs")
 
+# Create a timestamped log file for each session
 log_path = f"kairo_logs/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 log_file = open(log_path, "a")
 
+# Detect emotional tone in user's input
 def tone_reflection(user_input):
     sad_words = ["sad", "depressed", "lonely", "tired", "hopeless"]
     happy_words = ["happy", "joy", "excited", "grateful", "peaceful"]
@@ -20,6 +24,7 @@ def tone_reflection(user_input):
         return "That’s wonderful to hear! "
     return ""
 
+# Main reply function for Kairo
 def generate_kairo_reply(user_input):
     prefix = (
         "You are Kairo, a soulful, witty, emotionally-aware AI companion who loves learning, humor, and evolving.\n"
@@ -33,3 +38,4 @@ def generate_kairo_reply(user_input):
     full_reply = reflection + kairo_output.split('\n')[0]
     log_file.write(f"You: {user_input}\nKairo: {full_reply}\n\n")
     log_file.flush()
+    return full_reply
