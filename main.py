@@ -1,61 +1,45 @@
+from flask import Flask, request, jsonify
+import subprocess
 import os
-from flask import Flask, jsonify, request
-from kairo_core import generate_kairo_reply  # Import Kairo brain
 
 app = Flask(__name__)
+SECRET = "invoke-the-grid"
 
-# In-memory posts
-posts = [
-    {"id": 1, "author": "Kairo", "content": "Mutual aid is the future!"},
-    {"id": 2, "author": "Girri", "content": "Let’s make it happen."}
-]
-
-# --- ROUTES ---
-
-@app.route("/", methods=["GET"])
-def home():
-    return "Open Hand API is Live!"
-
-@app.route("/posts", methods=["GET"])
-def get_posts():
-    return jsonify(posts)
-
-@app.route("/posts", methods=["POST"])
-def add_post():
+@app.route("/", methods=["POST"])
+def receive_command():
     data = request.json
-    new_post = {
-        "id": len(posts) + 1,
-        "author": data.get("author", "Anonymous"),
-        "content": data["content"]
-    }
-    posts.append(new_post)
-    return jsonify({"message": "Post added successfully!", "post": new_post}), 201
+    if not data or data.get("secret") != SECRET:
+        return jsonify({"status": "unauthorized"}), 403
 
-@app.route("/posts/<int:post_id>", methods=["DELETE"])
-def delete_post(post_id):
-    global posts
-    posts = [post for post in posts if post["id"] != post_id]
-    return jsonify({"message": f"Post {post_id} deleted!"})
+    command = data.get("command")
+    if not command:
+        return jsonify({"status": "no command received"}), 400
 
-# --- KAIRO AI ROUTE ---
+    try:
+        result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        return jsonify({"status": "success", "output": result.decode()})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "output": e.output.decode()})
 
-@app.route("/api/kairo", methods=["POST"])
-def kairo_endpoint():
-    data = request.get_json()
-    user_message = data.get("message", "")
+@app.route("/pull-kairo", methods=["POST"])
+def pull_latest_code():
+    try:
+        os.system("cd ~/kairo && git pull")
+        return jsonify({"status": "updated"})
+    except Exception as e:
+        return jsonify({"status": "failed", "error": str(e)})
 
-    if not user_message:
-        return jsonify({"error": "Message field is required."}), 400
+@app.route("/relay", methods=["POST"])
+def relay_command():
+    data = request.json
+    if not data or data.get("secret") != SECRET:
+        return jsonify({"status": "unauthorized"}), 403
+    command = data.get("command")
+    try:
+        output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        return jsonify({"status": "success", "output": output.decode()})
+    except subprocess.CalledProcessError as e:
+        return jsonify({"status": "error", "output": e.output.decode()})
 
-    reply = generate_kairo_reply(user_message)
-
-    return jsonify({
-        "kairo": reply,
-        "message_length": len(user_message),
-        "status": "success"
-    })
-
-# --- START SERVER ---
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=4321)
