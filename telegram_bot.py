@@ -24,15 +24,20 @@ async def run_bot():
     print("Kairo Telegram bot polling started...")
     await app.run_polling()
 
-# Safe loop for environments like Render
-if __name__ == "__main__":
+# Safe bootloader — compatible with Render
+def safe_start():
     try:
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(run_bot())
-    except RuntimeError as e:
-        if "already running" in str(e):
-            asyncio.ensure_future(run_bot())
+        if loop.is_running():
+            # Inside existing loop (Render), spawn task
+            loop.create_task(run_bot())
         else:
-            raise
+            loop.run_until_complete(run_bot())
+    except RuntimeError:
+        asyncio.run(run_bot())
+
+# Run it
+if __name__ == "__main__":
+    safe_start()
 
 
