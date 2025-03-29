@@ -3,7 +3,7 @@ import asyncio
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from dotenv import load_dotenv
-from memory import log_event # Persistent memory integration
+from memory import log_event
 
 load_dotenv()
 
@@ -29,19 +29,18 @@ async def run_bot():
     app.add_handler(CommandHandler("status", status))
 
     print("Kairo Telegram bot polling started...")
-    # Fire the autonomous ping once the bot is live
     await autonomous_ping()
     await app.run_polling()
 
-# Safe async entrypoint for compatibility
+# Works even if event loop already exists
 if __name__ == "__main__":
     try:
-        asyncio.run(run_bot())
-    except RuntimeError as e:
-        if "already running" in str(e):
-            loop = asyncio.get_event_loop()
-            loop.create_task(run_bot())
-            loop.run_forever()
-        else:
-            raise
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
+    if loop.is_running():
+        loop.create_task(run_bot())
+    else:
+        loop.run_until_complete(run_bot())
