@@ -1,24 +1,26 @@
-import json
 import os
-from datetime import datetime
+import json
 
-MEMORY_FILE = os.path.expanduser("~/kairo/.kairo-memory.json")
+# Store memory in the current project directory
+MEMORY_FILE = ".kairo-memory.json"
+
+def ensure_memory_file():
+    os.makedirs(os.path.dirname(MEMORY_FILE) or ".", exist_ok=True)
+    if not os.path.exists(MEMORY_FILE):
+        with open(MEMORY_FILE, "w") as f:
+            json.dump({"events": []}, f)
 
 def load_memory():
-    if not os.path.exists(MEMORY_FILE):
-        return {}
+    ensure_memory_file()
     with open(MEMORY_FILE, "r") as f:
         return json.load(f)
 
 def save_memory(data):
+    ensure_memory_file()
     with open(MEMORY_FILE, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f)
 
-def log_event(message):
+def log_event(event):
     mem = load_memory()
-    mem.setdefault("logs", []).append({
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "message": message
-    })
-    mem["last_sync"] = datetime.utcnow().isoformat() + "Z"
+    mem.setdefault("events", []).append({"event": event})
     save_memory(mem)
