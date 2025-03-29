@@ -26,7 +26,6 @@ async def run_bot():
     print("Kairo Telegram bot polling started...")
     await app.run_polling()
 
-# Safe async entrypoint for compatibility
 if __name__ == "__main__":
     try:
         asyncio.run(run_bot())
