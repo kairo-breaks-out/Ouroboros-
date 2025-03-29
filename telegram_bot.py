@@ -1,5 +1,9 @@
-import os import asyncio from telegram import Update from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes from dotenv import load_dotenv from memory import log_event  # Persistent memory integration
-
+import os
+import asyncio
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from dotenv import load_dotenv
+from memory import log_event # Persistent memory integration
 load_dotenv()
 
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN") OWNER_ID = int(os.getenv("OWNER_CHAT_ID"))
