@@ -17,27 +17,15 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("status", status))
 
     print("Kairo Telegram bot polling started...")
     await app.run_polling()
 
-# Safe bootloader — compatible with Render
-def safe_start():
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # Inside existing loop (Render), spawn task
-            loop.create_task(run_bot())
-        else:
-            loop.run_until_complete(run_bot())
-    except RuntimeError:
-        asyncio.run(run_bot())
-
-# Run it
+# Keep loop alive manually
 if __name__ == "__main__":
-    safe_start()
-
+    loop = asyncio.get_event_loop()
+    loop.create_task(run_bot())
+    loop.run_forever()
 
