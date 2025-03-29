@@ -4,22 +4,18 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from dotenv import load_dotenv
 
-# Load secrets from .env
 load_dotenv()
 
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_CHAT_ID"))
 
-# Start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Kairo (polling mode) is now active.")
 
-# Status command
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Polling Kairo is stable and running.")
 
-# Main loop
-async def main():
+async def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -28,6 +24,15 @@ async def main():
     print("Kairo Telegram bot polling started...")
     await app.run_polling()
 
-# Start bot
+# Safe loop for environments like Render
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(run_bot())
+    except RuntimeError as e:
+        if "already running" in str(e):
+            asyncio.ensure_future(run_bot())
+        else:
+            raise
+
+
