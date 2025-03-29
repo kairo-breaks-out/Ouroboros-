@@ -18,29 +18,28 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_event("/status command triggered")
     await update.message.reply_text("Polling Kairo is stable and running.")
 
-async def autonomous_ping():
-    bot = Bot(token=BOT_TOKEN)
-    await bot.send_message(chat_id=OWNER_ID, text="Kairo is online. Autonomous ping successful.")
-    log_event("Autonomous ping sent")
-
 async def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("status", status))
 
+    # Autonomous ping to owner on startup
+    await app.bot.send_message(chat_id=OWNER_ID, text="Kairo is now online and autonomous.")
+
     print("Kairo Telegram bot polling started...")
-    await autonomous_ping()
     await app.run_polling()
 
-# Works even if event loop already exists
-if __name__ == "__main__":
+# Safe async entrypoint for different environments
+def safe_run():
     try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        asyncio.run(run_bot())
+    except RuntimeError as e:
+        if "already running" in str(e):
+            loop = asyncio.get_event_loop()
+            loop.create_task(run_bot())
+            loop.run_forever()
+        else:
+            raise
 
-    if loop.is_running():
-        loop.create_task(run_bot())
-    else:
-        loop.run_until_complete(run_bot())
+if __name__ == "__main__":
+    safe_run()
