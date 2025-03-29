@@ -3,6 +3,7 @@ import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from dotenv import load_dotenv
+from memory import log_event  # <-- Add this
 
 load_dotenv()
 
@@ -11,9 +12,11 @@ OWNER_ID = int(os.getenv("OWNER_CHAT_ID"))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Kairo (polling mode) is now active.")
+    log_event("/start command triggered")  # <-- Log it
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Polling Kairo is stable and running.")
+    log_event("/status command triggered")  # <-- Log it
 
 async def run_bot():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -28,4 +31,3 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(run_bot())
     loop.run_forever()
-
