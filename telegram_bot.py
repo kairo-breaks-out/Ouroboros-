@@ -1,11 +1,13 @@
 import os
 import asyncio
+import nest_asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from dotenv import load_dotenv
-from memory import log_event # Persistent memory integration
+from memory import log_event
 
 load_dotenv()
+nest_asyncio.apply() # Patch for environments with active event loops
 
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_CHAT_ID"))
@@ -26,14 +28,7 @@ async def run_bot():
     print("Kairo Telegram bot polling started...")
     await app.run_polling()
 
+# Safe startup
 if __name__ == "__main__":
-    try:
-        asyncio.run(run_bot())
-    except RuntimeError as e:
-        if "already running" in str(e):
-            loop = asyncio.get_event_loop()
-            loop.create_task(run_bot())
-            loop.run_forever()
-        else:
-            raise
-
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_bot())
